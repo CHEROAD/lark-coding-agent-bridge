@@ -2,7 +2,7 @@ import type { AccessMode } from '../config/permissions';
 import type { ProfileConfig } from '../config/profile-schema';
 import { BRIDGE_SYSTEM_PROMPT } from './bridge-system-prompt';
 
-export type AgentCapabilityId = 'claude' | 'codex';
+export type AgentCapabilityId = 'claude' | 'codex' | 'pi';
 export type AgentSessionKind = 'claude-session' | 'codex-thread';
 export type PromptInjectionMode = 'append-system-prompt' | 'stdin-prefix';
 
@@ -55,4 +55,36 @@ export function codexCapability(profile: Pick<ProfileConfig, 'permissions'>): Ag
       maxAccess,
     },
   };
+}
+
+export function piCapability(profile: Pick<ProfileConfig, 'permissions'>): AgentCapability {
+  const maxAccess = profile.permissions.maxAccess;
+  return {
+    agentId: 'pi',
+    sessionKind: 'claude-session',
+    promptInjection: 'stdin-prefix',
+    systemPrompt: BRIDGE_SYSTEM_PROMPT,
+    supportsNativeHistory: true,
+    callback: {
+      marker: '__bridge_cb',
+      legacyMarkers: [],
+    },
+    permissions: {
+      maxAccess,
+    },
+  };
+}
+
+/** Resolve the capability for a profile's agent kind. */
+export function capabilityFor(
+  profile: Pick<ProfileConfig, 'agentKind' | 'permissions'>,
+): AgentCapability {
+  switch (profile.agentKind) {
+    case 'codex':
+      return codexCapability(profile);
+    case 'pi':
+      return piCapability(profile);
+    default:
+      return claudeCapability(profile);
+  }
 }
